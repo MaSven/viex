@@ -4,8 +4,8 @@ defmodule ViexTest do
 
   test "lookup" do
     use_cassette "lookup" do
-      response = Viex.lookup("NL854265259B01")
-
+      response = Viex.lookup("DE270706065 ")
+      IO.inspect(response)
       assert response == %Viex.Response{
                address: "PRINS BERNHARDPLEIN 00200\n1097JB AMSTERDAM",
                company: "GITHUB B.V.",

@@ -1,4 +1,33 @@
 defmodule Viex do
+  @temp_path System.tmp_dir!() <> "/ustids.txt"
+  require Logger
+  def generate_all_ids() do
+    begin = 111_111_111
+
+    File.rm(@temp_path)
+    File.touch(@temp_path)
+    file = File.open!(@temp_path,[{:delayed_write ,1_000_000,10}])
+    IO.inspect("Created file #{file|> inspect()}")
+    numbers= generate_all_ids(begin, [])
+    IO.inspect(numbers |> length)
+    IO.inspect("generated numbers")
+    Enum.reverse(numbers) |>  Task.async_stream(fn number ->
+      case valid?(Integer.to_string(number)) do
+	      true -> IO.write(file,"DE#{number}")
+        _ -> nil
+      end
+    end,max_concurrency: 100,timeout: 10_000) |> Enum.each(&Logger.info("Given #{&1 |> inspect()}"))
+    File.close(file)
+  end
+
+  def generate_all_ids(999_999_999, numbers) do
+    numbers
+  end
+
+  def generate_all_ids(number, numbers) when is_integer(number) do
+    generate_all_ids(number + 1, [number + 1 | numbers])
+  end
+
   @moduledoc """
   Look up and validate European VAT numbers.
   """
@@ -10,7 +39,7 @@ defmodule Viex do
   Optionally accepts a `requester_vat` options that needs the VAT number of the entity
   the request is made on behalf of. It returns a `Viex.ApproxResponse` in that case
   """
-  @spec lookup(String.t(), [requester_vat: String.t | nil]) :: map | {:error, String.t()}
+  @spec lookup(String.t(), requester_vat: String.t() | nil) :: map | {:error, String.t()}
   def lookup(vat_number, opts \\ []) do
     requester_vat = Keyword.get(opts, :requester_vat)
 
@@ -29,7 +58,7 @@ defmodule Viex do
   @doc """
   Check the validity of a European VAT number. Accepts a binary, returns a boolean.
   """
-  @spec valid?(String.t(), [requester_vat: String.t | nil]) :: boolean
+  @spec valid?(String.t(), requester_vat: String.t() | nil) :: boolean
   def valid?(vat_number, opts \\ []) do
     vat_number
     |> lookup(opts)
