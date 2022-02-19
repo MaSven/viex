@@ -23,13 +23,20 @@ defmodule Viex.Mixfile do
       name: "Viex",
       source_url: "https://github.com/marceldegraaf/viex",
       homepage_url: "http://github.com/marceldegraaf/viex",
-      docs: [main: "Viex", extras: ["README.md"]]
+      docs: [main: "Viex", extras: ["README.md"]],
+      aliases: aliases()
     ]
   end
 
   def application do
     [
       extra_applications: [:logger]
+    ]
+  end
+
+  defp aliases do
+    [
+      generate: "Viex.generate_all_ids/0"
     ]
   end
 
