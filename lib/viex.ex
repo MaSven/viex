@@ -1,22 +1,36 @@
 defmodule Viex do
   @temp_path System.tmp_dir!() <> "/ustids.txt"
   require Logger
-  def generate_all_ids() do
-    begin = 111_111_111
 
+  def generate_all_ids() do
+    begin = 100000000
+    Logger.configure(level: :warn)
     File.rm(@temp_path)
     File.touch(@temp_path)
-    file = File.open!(@temp_path,[{:delayed_write ,1_000_000,10}])
-    IO.inspect("Created file #{file|> inspect()}")
-    numbers= generate_all_ids(begin, [])
+    {:ok, file} = File.open(@temp_path, [{:delayed_write, 1_000_000, 10}])
+    IO.inspect("Created file #{file |> inspect()}")
+    numbers = generate_all_ids(begin, [])
     IO.inspect(numbers |> length)
     IO.inspect("generated numbers")
-    Enum.reverse(numbers) |>  Task.async_stream(fn number ->
-      case valid?(Integer.to_string(number)) do
-	      true -> IO.write(file,"DE#{number}")
-        _ -> nil
-      end
-    end,max_concurrency: 100,timeout: 10_000) |> Enum.each(&Logger.info("Given #{&1 |> inspect()}"))
+
+    Enum.reverse(numbers)
+    |> Task.async_stream(
+      fn number ->
+        case valid?(Integer.to_string(number)) do
+          true ->
+            IO.write(file, "DE#{number}")
+            Process.sleep(1_000)
+
+          _ ->
+            nil
+        end
+      end,
+      max_concurrency: 100,
+      timeout: 1000_000
+    )
+    |> Enum.filter(&(&1 != nil))
+    |> Enum.each(&Logger.warn("Given #{&1 |> inspect()}"))
+
     File.close(file)
   end
 
